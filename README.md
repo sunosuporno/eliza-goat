@@ -1,136 +1,87 @@
-# Eliza 🤖
+# Eliza Mode Example
+*with GOAT 🐐*
 
-<div align="center">
-  <img src="./docs/static/img/eliza_banner.jpg" alt="Eliza Banner" width="100%" />
-</div>
+This fork is a **simplified example of Eliza focused on executing transactions onchain on Mode** using [GOAT](https://github.com/goat-sdk/goat-sdk). It's designed specifically for Mode, focusing on agents that handle complex onchain tasks. By using GOAT for all onchain functionality, this version removes unnecessary plugins for other blockchains and introduces a simpler character to start with that is tailored to doing actions on Mode.
 
-<div align="center">
+**Onchain actions**: Mint NFTs, check the latest trending tokens, purchase, trade them, and much more.
 
-  📖 [Documentation](https://ai16z.github.io/eliza/) | 🎯 [Examples](https://github.com/thejoven/awesome-eliza)
+Tech stack:
+- [Eliza](https://github.com/ai16z/eliza) - The AI agent framework
+- [GOAT](https://github.com/goat-sdk/goat-sdk) - The open-source framework for connecting AI agents to any onchain app
+- [Mode](https://mode.network) - The L2
 
-</div>
+**Support**
+- [Discord](https://discord.gg/goat-sdk)
 
-## 🌍 README Translations
 
-[中文说明](./README_CN.md) | [日本語の説明](./README_JA.md) | [한국어 설명](./README_KOR.md) | [Français](./README_FR.md) | [Português](./README_PTBR.md) | [Türkçe](./README_TR.md) | [Русский](./README_RU.md) | [Español](./README_ES.md) | [Italiano](./README_IT.md) | [ไทย](./README_TH.md) | [Deutsch](./README_DE.md) | [Tiếng Việt](./README_VI.md) | [עִברִית](https://github.com/ai16z/Elisa/blob/main/README_HE.md)
+## Running the project
+### Requirements
+- Node.js 23.3.0+
 
-## ✨ Features
+### Set up
 
--   🛠️ Full-featured Discord, Twitter and Telegram connectors
--   🔗 Support for every model (Llama, Grok, OpenAI, Anthropic, etc.)
--   👥 Multi-agent and room support
--   📚 Easily ingest and interact with your documents
--   💾 Retrievable memory and document store
--   🚀 Highly extensible - create your own actions and clients
--   ☁️ Supports many models (local Llama, OpenAI, Anthropic, Groq, etc.)
--   📦 Just works!
-
-## Video Tutorials
-[AI Agent Dev School](https://www.youtube.com/watch?v=ArptLpQiKfI&list=PLx5pnFXdPTRzWla0RaOxALTSTnVq53fKL)
-
-## 🎯 Use Cases
-
--   🤖 Chatbots
--   🕵️ Autonomous Agents
--   📈 Business Process Handling
--   🎮 Video Game NPCs
--   🧠 Trading
-
-## 🚀 Quick Start
-
-### Prerequisites
-
--   [Python 2.7+](https://www.python.org/downloads/)
--   [Node.js 23+](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
--   [pnpm](https://pnpm.io/installation)
-
-> **Note for Windows Users:** [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install-manual) is required.
-
-### Use the Starter (Recommended)
-
+1. Clone the repository
 ```bash
-git clone https://github.com/ai16z/eliza-starter.git
-
-cp .env.example .env
-
-pnpm i && pnpm build && pnpm start
+git clone https://github.com/goat-sdk/eliza-mode-example.git
 ```
 
-Then read the [Documentation](https://ai16z.github.io/eliza/) to learn how to customize your Eliza.
-
-### Manually Start Eliza (Only recommended if you know what you are doing)
-
+2. Go into the project directory
 ```bash
-# Clone the repository
-git clone https://github.com/ai16z/eliza.git
-
-# Checkout the latest release
-# This project iterates fast, so we recommend checking out the latest release
-git checkout $(git describe --tags --abbrev=0)
+cd eliza-mode-example
 ```
 
-### Start Eliza with Gitpod
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/ai16z/eliza/tree/main)
-
-### Edit the .env file
-
-Copy .env.example to .env and fill in the appropriate values.
-
+3. Install the dependencies
+```bash
+pnpm install
 ```
+
+4. Run `pnpm build`
+
+5. Copy the .env.example file to .env:
+```bash
 cp .env.example .env
 ```
 
-Note: .env is optional. If your planning to run multiple distinct agents, you can pass secrets through the character JSON
+6. Get an OpenAI API key and fill in the `OPENAI_API_KEY` in the .env file
 
-### Automatically Start Eliza
+### Giving the agent a wallet
 
-This will run everything to setup the project and start the bot with the default character.
+1. This example uses a key pair wallet to connect to Mode. Save the key and fill in the following in the .env file:
+    - `EVM_PRIVATE_KEY=your_private_key`
+    - `EVM_PROVIDER_URL=https://mainnet.mode.network/` (more on Mode RPCs [here](https://docs.mode.network/docs/rpc-endpoints))
 
-```bash
-sh scripts/start.sh
+### Running the agent
+
+1. You can now run the agent with the command `pnpm start --character="characters/mode-hacker.character.json"`
+2. In a different terminal run `pnpm start:client` to start the chat interface
+3. Go to `http://localhost:5173` to chat with your agent
+
+
+## Configuring the project
+### The character
+- You can see the definition of your character in the `characters/mode-hacker.character.json` file.
+- This project gives you a simple example character to get you started. This allows you to easily add onchain actions and test them out while increasing the complexity of your agent step by step. Keep adding and modifying the bio and tone of the character to make it your own.
+
+### Eliza
+- This is an Eliza fork so you can do pretty much everything you can do with Eliza. Check out the [Eliza docs](https://ai16z.github.io/eliza/) for more information on how to integrate your agent with Twitter, Discord, etc.
+
+### Onchain actions with GOAT
+- The Crossmint plugin (`packages/plugin-crossmint`) uses GOAT to add all onchain functionality to the agent. Within the `index.ts` file of the plugin you can add any GOAT plugins you need or even create your own. Check out the [GOAT docs](https://ohmygoat.dev) for more information.
+```typescript
+const actions = await getOnChainActions({
+        wallet: walletClient,
+        // Add plugins here based on what actions you want to use
+        // See all available plugins at https://ohmygoat.dev/chains-wallets-plugins#plugins
+        plugins: [
+            // Add you EVM / Mode plugins here
+            // coingecko({
+            //  apiKey: getSetting("COINGECKO_API_KEY")
+            // })
+        ],
+    });
 ```
 
-### Edit the character file
-
-1. Open `packages/core/src/defaultCharacter.ts` to modify the default character. Uncomment and edit.
-
-2. To load custom characters:
-    - Use `pnpm start --characters="path/to/your/character.json"`
-    - Multiple character files can be loaded simultaneously
-3. Connect with X (Twitter)
-    - change `"clients": []` to `"clients": ["twitter"]` in the character file to connect with X
-
-### Manually Start Eliza
-
-```bash
-pnpm i
-pnpm build
-pnpm start
-
-# The project iterates fast, sometimes you need to clean the project if you are coming back to the project
-pnpm clean
-```
-
-#### Additional Requirements
-
-You may need to install Sharp. If you see an error when starting up, try installing it with the following command:
-
-```
-pnpm install --include=optional sharp
-```
-
-### Community & contact
-
--   [GitHub Issues](https://github.com/ai16z/eliza/issues). Best for: bugs you encounter using Eliza, and feature proposals.
--   [Discord](https://discord.gg/ai16z). Best for: sharing your applications and hanging out with the community.
-
-## Contributors
-
-<a href="https://github.com/ai16z/eliza/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=ai16z/eliza" />
-</a>
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=ai16z/eliza&type=Date)](https://star-history.com/#ai16z/eliza&Date)
+## Tips for troubleshooting
+1. When making changes to any package (e.g the Crossmint plugin), remember to run `pnpm build` to update the project.
+2. To see why the agent is making a certain decision, add console logs to see the prompts and responses that it is getting on every interaction. For example. if you are using the direct client that would be [here](https://github.com/goat-sdk/eliza-solana-example/blob/main/packages/client-direct/src/index.ts#L135).
+3. You can also copy the agent prompts that you log and play with them in ChatGPT to see how you could improve them.

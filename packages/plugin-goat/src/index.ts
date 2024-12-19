@@ -1,8 +1,9 @@
 import type { Plugin } from "@ai16z/eliza";
 import { getOnChainActions } from "./actions";
 import { erc20, USDC } from "@goat-sdk/plugin-erc20";
-import { sendETH } from "@goat-sdk/core";
+import { sendETH } from "@goat-sdk/wallet-evm";
 import { getWalletClient, getWalletProvider } from "./wallet";
+// import { coingecko } from "@goat-sdk/plugin-coingecko";
 
 async function createGoatPlugin(
     getSetting: (key: string) => string | undefined
@@ -14,13 +15,16 @@ async function createGoatPlugin(
         // See all available plugins at https://ohmygoat.dev/chains-wallets-plugins#plugins
         plugins: [
             sendETH(),
-            erc20({ tokens: [USDC] }),
+            // erc20({ tokens: [USDC] }),
+            // coingecko({
+            //     apiKey: getSetting("COINGECKO_API_KEY"),
+            // }),
         ],
     });
 
     return {
         name: "[GOAT] Onchain Actions",
-        description: "Base integration plugin",
+        description: "Mode integration plugin",
         providers: [getWalletProvider(walletClient)],
         evaluators: [],
         services: [],

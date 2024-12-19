@@ -1,13 +1,5 @@
 import {
-    type WalletClient,
-    type Plugin,
-    addParametersToDescription,
-    type Tool,
-    getTools,
-} from "@goat-sdk/core";
-import {
     type Action,
-    generateText,
     type HandlerCallback,
     type IAgentRuntime,
     type Memory,
@@ -15,11 +7,19 @@ import {
     type State,
     composeContext,
     generateObject,
+    generateText,
 } from "@ai16z/eliza";
+import {
+    type PluginBase,
+    type ToolBase,
+    type WalletClientBase,
+    addParametersToDescription,
+    getTools,
+} from "@goat-sdk/core";
 
-type GetOnChainActionsParams<TWalletClient extends WalletClient> = {
+type GetOnChainActionsParams<TWalletClient extends WalletClientBase> = {
     wallet: TWalletClient;
-    plugins: Plugin<TWalletClient>[];
+    plugins: PluginBase<TWalletClient>[];
 };
 
 /**
@@ -28,27 +28,23 @@ type GetOnChainActionsParams<TWalletClient extends WalletClient> = {
  * @param params
  * @returns
  */
-export async function getOnChainActions<TWalletClient extends WalletClient>({
+export async function getOnChainActions<
+    TWalletClient extends WalletClientBase,
+>({
     wallet,
     plugins,
 }: GetOnChainActionsParams<TWalletClient>): Promise<Action[]> {
     const tools = await getTools<TWalletClient>({
         wallet,
         plugins,
-        wordForTool: "action",
     });
 
-    return tools
-        .map((action) => ({
-            ...action,
-            name: action.name.toUpperCase(),
-        }))
-        .map((tool) => createAction(tool));
+    return tools.map((tool) => createAction(tool));
 }
 
-function createAction(tool: Tool): Action {
+function createAction(tool: ToolBase): Action {
     return {
-        name: tool.name,
+        name: tool.name.toUpperCase(),
         similes: [],
         description: tool.description,
         validate: async () => true,
@@ -84,7 +80,7 @@ function createAction(tool: Tool): Action {
                     return false;
                 }
 
-                const result = await tool.method(parsedParameters.data);
+                const result = await tool.execute(parsedParameters.data);
                 const responseContext = composeResponseContext(
                     tool,
                     result,
@@ -111,7 +107,7 @@ function createAction(tool: Tool): Action {
     };
 }
 
-function composeParameterContext(tool: Tool, state: State): string {
+function composeParameterContext(tool: ToolBase, state: State): string {
     const contextTemplate = `{{recentMessages}}
 
 Given the recent messages, extract the following information for the action "${tool.name}":
@@ -123,7 +119,7 @@ ${addParametersToDescription("", tool.parameters)}
 async function generateParameters(
     runtime: IAgentRuntime,
     context: string,
-    tool: Tool
+    tool: ToolBase
 ): Promise<unknown> {
     const { object } = await generateObject({
         runtime,
@@ -136,7 +132,7 @@ async function generateParameters(
 }
 
 function composeResponseContext(
-    tool: Tool,
+    tool: ToolBase,
     result: unknown,
     state: State
 ): string {

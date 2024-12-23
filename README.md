@@ -22,17 +22,21 @@ Tech stack:
 
 1. Clone the repository
 ```bash
-git clone https://github.com/goat-sdk/eliza-mode-example.git
+git clone https://github.com/sunosuporno/eliza-goat.git
 ```
 
 2. Go into the project directory
 ```bash
-cd eliza-mode-example
+cd eliza-goat
 ```
 
 3. Install the dependencies
 ```bash
 pnpm install
+```
+If you're facing errors, try: 
+```bash
+pnpm install --no-frozen-lockfile --ignore-scripts
 ```
 
 4. Run `pnpm build`

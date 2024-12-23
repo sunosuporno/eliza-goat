@@ -11,6 +11,7 @@
         "@goat-sdk/plugin-erc20": "~0.2.0",
         "@goat-sdk/plugin-kim": "workspace:*",
         "@goat-sdk/plugin-ironclad": "workspace:*",
+        "@goat-sdk/plugin-renzo": "workspace:*",
         "@goat-sdk/wallet-evm": "^0.2.0",
         "@goat-sdk/wallet-viem": "~0.2.0",
         "tsup": "8.3.5",

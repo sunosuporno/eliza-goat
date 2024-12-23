@@ -18,7 +18,7 @@ export class LoopDepositParameters extends createToolParameters(
             .string()
             .optional()
             .default("0")
-            .describe("Referral code"),
+            .describe("Referral code, send 0 as value"),
     })
 ) {}
 

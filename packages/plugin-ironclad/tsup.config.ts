@@ -18,4 +18,14 @@ export default defineConfig({
         "viem",
         "@lifi/sdk",
     ],
+    dts: true,
+    splitting: false,
+    esbuildOptions(options) {
+        options.target = "esnext";
+    },
+    treeshake: true,
+    esbuildPlugins: [],
+    loader: {
+        ".ts": "ts",
+    },
 });

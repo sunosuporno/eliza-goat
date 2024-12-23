@@ -111,19 +111,16 @@ export class MintParams extends createToolParameters(
         token1Address: z
             .string()
             .describe("The address of the second token in the pair"),
-        tickLower: z
-            .number()
-            .optional()
-            .describe("The lower tick for the liquidity"),
-        tickUpper: z
-            .number()
-            .optional()
-            .describe("The upper tick for the liquidity"),
         amount0Desired: z.string().describe("The amount of token0 to add"),
         amount1Desired: z.string().describe("The amount of token1 to add"),
-        amount0Min: z.string().describe("The minimum amount of token0 to add"),
-        amount1Min: z.string().describe("The minimum amount of token1 to add"),
         deadline: z.number().describe("The deadline for the swap"),
+        riskLevel: z
+            .number()
+            .min(1)
+            .max(5)
+            .describe(
+                "Risk level for position range (1: most conservative, 5: most aggressive)"
+            ),
     })
 ) {}
 

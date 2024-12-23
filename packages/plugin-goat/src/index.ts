@@ -3,6 +3,7 @@ import { getOnChainActions } from "./actions";
 import { erc20, USDC } from "@goat-sdk/plugin-erc20";
 import { sendETH } from "@goat-sdk/wallet-evm";
 import { kim } from "@goat-sdk/plugin-kim";
+import { ironclad } from "@goat-sdk/plugin-ironclad";
 import { getWalletClient, getWalletProvider } from "./wallet";
 // import { coingecko } from "@goat-sdk/plugin-coingecko";
 
@@ -52,6 +53,7 @@ async function createGoatPlugin(
                 ],
             }),
             kim(),
+            ironclad(),
             // erc20({ tokens: [USDC] }),
             // coingecko({
             //     apiKey: getSetting("COINGECKO_API_KEY"),

@@ -5,6 +5,7 @@ import { encodeAbiParameters } from "viem";
 import { ERC20_ABI } from "./abi/erc20";
 import { KIM_FACTORY_ABI } from "./abi/factory";
 import { POOL_ABI } from "./abi/pool";
+import { CALCULATOR_ABI } from "./abi/calculator";
 import { POSITION_MANAGER_ABI } from "./abi/positionManager";
 import { SWAP_ROUTER_ABI } from "./abi/swaprouter";
 import {
@@ -24,6 +25,7 @@ import {
 const SWAP_ROUTER_ADDRESS = "0xAc48FcF1049668B285f3dC72483DF5Ae2162f7e8";
 const POSITION_MANAGER_ADDRESS = "0x2e8614625226D26180aDf6530C3b1677d3D7cf10";
 const FACTORY_ADDRESS = "0xB5F00c2C5f8821155D8ed27E31932CFD9DB3C5D5";
+const CALCULATOR_ADDRESS = "0x6f8E2B58373aB12Be5f7c28658633dD27D689f0D";
 
 export class KimService {
     @Tool({
@@ -283,94 +285,126 @@ export class KimService {
                 token1Address: parameters.token1Address,
                 amount0Desired: parameters.amount0Desired.toString(),
                 amount1Desired: parameters.amount1Desired.toString(),
+                riskLevel: parameters.riskLevel,
                 deadline: parameters.deadline,
             });
 
-            const tickSpacing = 60;
-            console.log("📊 Using tick spacing:", tickSpacing);
+            // Get pool address
+            console.log("🔍 Fetching pool address for pair...");
+            const poolAddressResult = await walletClient.read({
+                address: FACTORY_ADDRESS as `0x${string}`,
+                abi: KIM_FACTORY_ABI,
+                functionName: "poolByPair",
+                args: [parameters.token0Address, parameters.token1Address],
+            });
+            const poolAddress = (poolAddressResult as { value: string }).value;
+            console.log("✅ Pool found:", { poolAddress });
 
-            // Token ordering check
+            // Get actual pool tokens
+            console.log("🔍 Fetching pool token addresses...");
+            const token0Result = await walletClient.read({
+                address: poolAddress as `0x${string}`,
+                abi: POOL_ABI,
+                functionName: "token0",
+            });
+            const token1Result = await walletClient.read({
+                address: poolAddress as `0x${string}`,
+                abi: POOL_ABI,
+                functionName: "token1",
+            });
+
+            const poolToken0 = (token0Result as { value: string }).value;
+            const poolToken1 = (token1Result as { value: string }).value;
+
+            // Check if parameters match pool order
             const isOrderMatched =
-                parameters.token0Address.toLowerCase() <
-                parameters.token1Address.toLowerCase();
-            console.log("🔄 Token order check - matched:", isOrderMatched);
+                parameters.token0Address.toLowerCase() ===
+                poolToken0.toLowerCase();
+            console.log("🔄 Token ordering:", {
+                isOrderMatched,
+                poolToken0,
+                poolToken1,
+                paramToken0: parameters.token0Address,
+                paramToken1: parameters.token1Address,
+            });
 
             // Set tokens and amounts in correct order
             const [token0, token1] = isOrderMatched
                 ? [parameters.token0Address, parameters.token1Address]
                 : [parameters.token1Address, parameters.token0Address];
-            console.log("📋 Ordered tokens:", {
-                token0,
-                token1,
-            });
-
             const [amount0Raw, amount1Raw] = isOrderMatched
                 ? [parameters.amount0Desired, parameters.amount1Desired]
                 : [parameters.amount1Desired, parameters.amount0Desired];
-            console.log("💰 Ordered amounts:", {
+            console.log("📋 Ordered tokens and amounts:", {
+                token0,
+                token1,
                 amount0Raw: amount0Raw.toString(),
                 amount1Raw: amount1Raw.toString(),
             });
 
-            // Get pool address
-            console.log("🏊 Fetching pool address from factory...");
-            const poolAddressResult = await walletClient.read({
-                address: FACTORY_ADDRESS as `0x${string}`,
-                abi: KIM_FACTORY_ABI,
-                functionName: "poolByPair",
-                args: [token0, token1],
+            // Calculate optimal amounts
+            console.log(
+                "🧮 Calculating optimal amounts with risk level:",
+                parameters.riskLevel
+            );
+            const calculatorResult = await walletClient.read({
+                address: CALCULATOR_ADDRESS as `0x${string}`,
+                abi: CALCULATOR_ABI,
+                functionName: "calculateOptimalAmounts",
+                args: [
+                    poolAddress,
+                    amount0Raw,
+                    amount1Raw,
+                    parameters.riskLevel,
+                ],
             });
-            const poolAddress = (poolAddressResult as { value: string }).value;
-            console.log("✅ Pool address:", poolAddress);
-
-            // Get global state
-            console.log("📈 Fetching pool global state...");
-            const globalState = await walletClient.read({
-                address: poolAddress as `0x${string}`,
-                abi: POOL_ABI,
-                functionName: "globalState",
-            });
-            const globalStateArray = (globalState as { value: any[] }).value;
-            const currentTick = parseInt(globalStateArray[1].toString());
-            console.log("📊 Current tick:", currentTick);
-
-            // Calculate ticks
-            const nearestTick =
-                Math.floor(currentTick / tickSpacing) * tickSpacing;
-            const tickLower = nearestTick - tickSpacing * 10;
-            const tickUpper = nearestTick + tickSpacing * 10;
-            console.log("🎯 Calculated ticks:", {
-                nearestTick,
+            const {
+                value: [optimalAmount0, optimalAmount1, tickLower, tickUpper],
+            } = calculatorResult as {
+                value: [bigint, bigint, number, number];
+            };
+            console.log("📊 Optimization results:", {
+                optimalAmount0: optimalAmount0.toString(),
+                optimalAmount1: optimalAmount1.toString(),
                 tickLower,
                 tickUpper,
+                tickSpread: tickUpper - tickLower,
             });
 
-            // Token approvals
-            console.log("👍 Approving token0...");
+            // Approvals
+            console.log("🔓 Starting token approvals...");
             const approvalHash0 = await walletClient.sendTransaction({
                 to: token0 as `0x${string}`,
                 abi: ERC20_ABI,
                 functionName: "approve",
-                args: [POSITION_MANAGER_ADDRESS, amount0Raw],
+                args: [POSITION_MANAGER_ADDRESS, optimalAmount0],
             });
-            console.log("✅ Token0 approval hash:", approvalHash0);
+            console.log("✅ Token0 approved:", {
+                token: token0,
+                amount: optimalAmount0.toString(),
+                hash: approvalHash0,
+            });
 
-            console.log("👍 Approving token1...");
             const approvalHash1 = await walletClient.sendTransaction({
                 to: token1 as `0x${string}`,
                 abi: ERC20_ABI,
                 functionName: "approve",
-                args: [POSITION_MANAGER_ADDRESS, amount1Raw],
+                args: [POSITION_MANAGER_ADDRESS, optimalAmount1],
             });
-            console.log("✅ Token1 approval hash:", approvalHash1);
+            console.log("✅ Token1 approved:", {
+                token: token1,
+                amount: optimalAmount1.toString(),
+                hash: approvalHash1,
+            });
 
-            // Calculate deadline
+            // Mint
             const timestamp =
                 Math.floor(Date.now() / 1000) + parameters.deadline;
-            console.log("⏰ Calculated deadline timestamp:", timestamp);
+            console.log(
+                "⏰ Minting with deadline:",
+                new Date(timestamp * 1000).toISOString()
+            );
 
-            // Mint position
-            console.log("🌟 Minting position...");
             const hash = await walletClient.sendTransaction({
                 to: POSITION_MANAGER_ADDRESS,
                 abi: POSITION_MANAGER_ABI,
@@ -381,8 +415,8 @@ export class KimService {
                         token1,
                         tickLower,
                         tickUpper,
-                        amount0Desired: amount0Raw,
-                        amount1Desired: amount1Raw,
+                        amount0Desired: optimalAmount0,
+                        amount1Desired: optimalAmount1,
                         amount0Min: 0,
                         amount1Min: 0,
                         recipient: walletClient.getAddress(),
@@ -390,11 +424,26 @@ export class KimService {
                     },
                 ],
             });
-            console.log("✨ Position minted successfully! Hash:", hash.hash);
+            console.log("🎉 Position minted successfully!", {
+                hash: hash.hash,
+                token0,
+                token1,
+                amount0: optimalAmount0.toString(),
+                amount1: optimalAmount1.toString(),
+                tickRange: `${tickLower} to ${tickUpper}`,
+            });
 
             return hash.hash;
         } catch (error) {
-            console.error("❌ Error in mintPosition:", error);
+            console.error("❌ Error in mintPosition:", {
+                error,
+                step: "Failed step will be shown in stack trace",
+                params: {
+                    token0Address: parameters.token0Address,
+                    token1Address: parameters.token1Address,
+                    riskLevel: parameters.riskLevel,
+                },
+            });
             throw new Error(`Failed to mint position: ${error}`);
         }
     }
